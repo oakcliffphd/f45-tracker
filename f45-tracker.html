@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F45 Workout Tracker</title>
+
+<style>
+:root {
+  --blue-dark: #0d47a1;
+  --blue-mid:  #1565c0;
+  --white:     #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue-mid) 100%);
+  min-height: 100vh;
+  color: #e8f2ff;
+}
+
+/* ── header ── */
+.hdr { background: rgba(0,0,0,.2); border-bottom: 1px solid rgba(255,255,255,.1); padding: 14px 32px; }
+.brand { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 2.2rem; color: #fff; letter-spacing: 2px; line-height: 1; }
+.sub { font-size: .65rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 3px; margin-top: 3px; }
+
+/* ── layout ── */
+.wrap { max-width: 960px; margin: 0 auto; padding: 32px 24px 0; }
+@media(max-width:620px) { .wrap { padding: 16px 16px 0; } .hdr { padding: 12px 16px; } }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+@media(max-width:620px) { .grid2 { grid-template-columns: 1fr; } }
+
+/* ── progress ── */
+.prog-sec { margin-bottom: 28px; }
+.big-row { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.big-num { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 6rem; line-height: 1; color: #fff; letter-spacing: -2px; transition: transform .3s; }
+.big-slash { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 2rem; color: rgba(255,255,255,.28); padding-bottom: 12px; }
+.big-lbl { font-size: .65rem; text-transform: uppercase; letter-spacing: 4px; color: rgba(255,255,255,.45); margin-top: 4px; }
+.bar-wrap { background: rgba(0,0,0,.22); height: 6px; border-radius: 3px; margin: 20px 0 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, rgba(255,255,255,.5), #fff); transition: width .8s cubic-bezier(.16,1,.3,1); }
+.bar-lbls { display: flex; justify-content: space-between; font-size: .62rem; color: rgba(255,255,255,.38); letter-spacing: 1px; }
+
+/* ── stat cards ── */
+.card { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.17); border-radius: 6px; padding: 20px; margin: 8px; backdrop-filter: blur(4px); }
+.card .v { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 2.4rem; color: #fff; line-height: 1; }
+.card .v span { font-size: 1.2rem; color: rgba(255,255,255,.3); }
+.card .l { font-size: .6rem; text-transform: uppercase; letter-spacing: 3px; color: rgba(255,255,255,.45); margin-top: 4px; }
+.card .note { font-size: .6rem; color: rgba(255,255,255,.4); margin-top: 5px; letter-spacing: 1px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 2px; font-size: .6rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; margin-top: 8px; }
+.good    { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.35); }
+.warn    { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.25); }
+.behind  { background: rgba(255,100,100,.2); color: #ffaaaa; border: 1px solid rgba(255,100,100,.35); }
+
+/* ── divider ── */
+.divider { height: 1px; background: rgba(255,255,255,.12); margin: 20px 0; }
+
+/* ── calendar ── */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cal-title { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: #fff; }
+.nav-btn { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.7); width: 36px; height: 36px; border-radius: 3px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.nav-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+.day-hdrs { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 4px; }
+.day-hdr { text-align: center; font-size: .58rem; letter-spacing: 2px; color: rgba(255,255,255,.32); padding: 4px 0; text-transform: uppercase; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.cell { aspect-ratio: 1/1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .75rem; cursor: pointer; border: 1px solid rgba(255,255,255,.14); transition: all .15s; position: relative; user-select: none; background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); -webkit-tap-highlight-color: transparent; }
+.cell:active { transform: scale(.92); }
+.cell.worked { background: #fff !important; color: var(--blue-dark) !important; border-color: #fff !important; font-weight: 600; }
+.cell.today:not(.travel) { border: 2px solid rgba(255,255,255,.7) !important; color: #fff; font-weight: 600; }
+.cell.today.worked { color: var(--blue-dark) !important; }
+.cell.travel { background: rgba(0,0,0,.18) !important; color: rgba(255,255,255,.2) !important; border-color: rgba(255,255,255,.06) !important; cursor: default; }
+.cell.future:not(.travel) { opacity: .25; cursor: default; }
+.cell.empty { border: none !important; background: transparent !important; cursor: default; }
+.tick { font-size: .45rem; position: absolute; top: 2px; right: 3px; line-height: 1; }
+
+/* ── legend ── */
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+.leg { display: flex; align-items: center; gap: 6px; font-size: .57rem; color: rgba(255,255,255,.38); text-transform: uppercase; letter-spacing: 1px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* ── travel list ── */
+.tlist-hdr { font-size: .58rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,.32); margin-bottom: 8px; }
+.titem { display: flex; align-items: center; background: rgba(0,0,0,.15); border: 1px solid rgba(255,255,255,.08); border-radius: 4px; padding: 9px 12px; margin-bottom: 5px; }
+.titem-label { font-size: .65rem; color: rgba(255,255,255,.58); font-weight: 500; }
+.titem-dates { font-size: .57rem; color: rgba(255,255,255,.28); margin-top: 2px; }
+
+/* ── mini stats ── */
+.mini { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 20px; }
+.mval { font-family: Impact, 'Arial Narrow', Arial, sans-serif; font-size: 1.6rem; line-height: 1; }
+.mlbl { font-size: .57rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,.35); margin-top: 2px; }
+
+.footer { text-align: center; font-size: .57rem; color: rgba(255,255,255,.25); letter-spacing: 2px; padding: 28px 0 36px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="brand">F45 Training</div>
+  <div class="sub">Workout Attendance Tracker</div>
+</div>
+
+<div class="wrap">
+
+  <!-- progress -->
+  <div class="prog-sec">
+    <div class="big-row">
+      <div>
+        <div class="big-num" id="bigNum">301</div>
+        <div class="big-lbl">Workouts completed</div>
+      </div>
+      <div class="big-slash">/ 400</div>
+    </div>
+    <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
+    <div class="bar-lbls"><span>300 START</span><span id="barPct"></span><span>400 GOAL</span></div>
+  </div>
+
+  <!-- stat cards -->
+  <div class="grid2">
+    <div class="card"><div class="v" id="cardRemaining"></div><div class="l">Workouts to go</div></div>
+    <div class="card">
+      <div class="v" id="cardAvail"></div>
+      <div class="l">Available days left</div>
+      <div class="note" id="cardTravelNote"></div>
+    </div>
+    <div class="card">
+      <div class="v" id="cardNeeded"></div>
+      <div class="l">Needed per week</div>
+      <div class="badge" id="paceBadge"></div>
+    </div>
+    <div class="card">
+      <div class="v" id="cardWeek"></div>
+      <div class="l">This week</div>
+      <div class="note" id="cardWeekNote"></div>
+      <div class="badge" id="weekBadge"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- calendar -->
+  <div class="cal-nav">
+    <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+    <div class="cal-title" id="calTitle"></div>
+    <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+  </div>
+  <div class="day-hdrs">
+    <div class="day-hdr">M</div><div class="day-hdr">T</div><div class="day-hdr">W</div>
+    <div class="day-hdr">T</div><div class="day-hdr">F</div>
+    <div class="day-hdr" style="color:rgba(255,255,255,.18)">S</div>
+    <div class="day-hdr" style="color:rgba(255,255,255,.18)">S</div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+
+  <!-- legend -->
+  <div class="legend">
+    <div class="leg"><div class="swatch" style="background:#fff"></div>Workout logged</div>
+    <div class="leg"><div class="swatch" style="background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1)"></div>Travel day</div>
+    <div class="leg"><div class="swatch" style="background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.7)"></div>Today</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- travel list -->
+  <div class="tlist-hdr">Blocked travel periods</div>
+  <div id="travelList"></div>
+
+  <div class="divider"></div>
+
+  <!-- mini stats -->
+  <div class="mini">
+    <div><div class="mval" id="mStreak" style="color:#fff">0</div><div class="mlbl">Day streak</div></div>
+    <div><div class="mval" id="mLogged" style="color:#fff">0</div><div class="mlbl">Logged total</div></div>
+    <div><div class="mval" id="mBest"   style="color:#fff">0</div><div class="mlbl">Best week</div></div>
+    <div><div class="mval" id="mTravel" style="color:rgba(255,255,255,.38)">0</div><div class="mlbl">Travel days ahead</div></div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="footer">Started Dec 2023 &middot; Goal: 400 by Dec 17, 2026 &middot; Travel days excluded from pace</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const GOAL        = 400;
+const START_COUNT = 300;
+const GOAL_DATE   = new Date(2026, 11, 17); // Dec 17
+const TODAY       = new Date(2026,  2, 31); // Mar 31
+
+// Hardcoded workouts — add dates here as "YYYY-MM-DD"
+const HARDCODED_WORKOUTS = [
+  "2026-03-31",
+  "2026-04-06",
+  "2026-04-07",
+  "2026-04-09"
+];
+
+// Travel ranges
+const TRAVEL_RANGES = [
+  { start:"2026-04-03", end:"2026-04-05", label:"Dallas"     },
+  { start:"2026-04-25", end:"2026-04-26", label:"Seattle"    },
+  { start:"2026-05-03", end:"2026-05-09", label:"New York"   },
+  { start:"2026-05-21", end:"2026-05-31", label:"Atlanta"    },
+  { start:"2026-06-25", end:"2026-06-28", label:"Dallas"     },
+  { start:"2026-06-29", end:"2026-07-02", label:"Morocco"    },
+  { start:"2026-07-02", end:"2026-07-03", label:"Madrid"     },
+  { start:"2026-07-03", end:"2026-07-11", label:"Croatia"    },
+  { start:"2026-07-11", end:"2026-07-15", label:"Montenegro" },
+  { start:"2026-09-03", end:"2026-09-08", label:"Detroit"    },
+];
+
+// ── HELPERS ───────────────────────────────────────────────────
+function ymd(str) {
+  const [y,m,d] = str.split("-").map(Number);
+  return new Date(y, m-1, d);
+}
+function toKey(date) {
+  return date.getFullYear() + "-" +
+    String(date.getMonth()+1).padStart(2,"0") + "-" +
+    String(date.getDate()).padStart(2,"0");
+}
+function monWeekKey(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun
+  d.setDate(d.getDate() - ((day + 6) % 7));
+  return toKey(d);
+}
+
+// Build travel set
+const TRAVEL_SET = new Set();
+TRAVEL_RANGES.forEach(({start,end}) => {
+  const d = ymd(start), e = ymd(end);
+  const cur = new Date(d);
+  while (cur <= e) { TRAVEL_SET.add(toKey(cur)); cur.setDate(cur.getDate()+1); }
+});
+
+// Count travel days ahead
+const TRAVEL_DAYS_AHEAD = [...TRAVEL_SET].filter(k => {
+  const d = ymd(k); return d > TODAY && d <= GOAL_DATE;
+}).length;
+
+// Count available days remaining
+function countAvailDays() {
+  let n = 0;
+  const d = new Date(TODAY); d.setDate(d.getDate()+1);
+  while (d <= GOAL_DATE) { if (!TRAVEL_SET.has(toKey(d))) n++; d.setDate(d.getDate()+1); }
+  return n;
+}
+const AVAIL_DAYS = countAvailDays();
+
+// Compact travel for display
+function compactTravel() {
+  const sorted = [...TRAVEL_SET].sort();
+  if (!sorted.length) return [];
+  const groups = [];
+  let gs = sorted[0], ge = sorted[0];
+  for (let i=1; i<sorted.length; i++) {
+    const prev = new Date(ymd(sorted[i-1])); prev.setDate(prev.getDate()+1);
+    if (toKey(prev) === sorted[i]) { ge = sorted[i]; }
+    else { groups.push({start:gs,end:ge}); gs=sorted[i]; ge=sorted[i]; }
+  }
+  groups.push({start:gs,end:ge});
+  return groups.map(g => {
+    const match = TRAVEL_RANGES.find(r => r.start <= g.start && r.end >= g.start) || TRAVEL_RANGES[0];
+    return {...g, label: match.label};
+  });
+}
+
+// ── STATE ─────────────────────────────────────────────────────
+const workouts = {};
+HARDCODED_WORKOUTS.forEach(k => { workouts[k] = true; });
+
+let viewYear  = 2026;
+let viewMonth = 2; // 0-indexed, March
+
+const MONTH_NAMES = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
+
+// ── RENDER ───────────────────────────────────────────────────
+function render() {
+  const logged   = Object.values(workouts).filter(Boolean).length;
+  const total    = START_COUNT + logged;
+  const remaining = GOAL - total;
+  const pct      = Math.min((total / GOAL) * 100, 100);
+  const neededPW = AVAIL_DAYS > 0 ? remaining / (AVAIL_DAYS / 7) : 0;
+
+  // this week
+  const thisWk = monWeekKey(TODAY);
+  const thisWkCount = Object.entries(workouts)
+    .filter(([k,v]) => v && monWeekKey(ymd(k)) === thisWk).length;
+  const thisWkTrav = [...TRAVEL_SET].filter(k => monWeekKey(ymd(k)) === thisWk).length;
+  const thisWkTgt  = Math.max(1, Math.min(4, 7 - thisWkTrav));
+
+  // streak
+  let streak = 0;
+  const sd = new Date(TODAY);
+  while (workouts[toKey(sd)]) { streak++; sd.setDate(sd.getDate()-1); }
+
+  // best week
+  const wkMap = {};
+  Object.entries(workouts).forEach(([k,v]) => {
+    if (v) { const w = monWeekKey(ymd(k)); wkMap[w] = (wkMap[w]||0)+1; }
+  });
+  const bestWk = Object.values(wkMap).length ? Math.max(...Object.values(wkMap)) : 0;
+
+  // pace
+  const paceClass = neededPW < 3.8 ? "good" : neededPW <= 4.3 ? "warn" : "behind";
+  const paceLabel = neededPW < 3.8 ? "Ahead of pace" : neededPW <= 4.3 ? "On track" : "Behind pace";
+
+  // update DOM
+  document.getElementById("bigNum").textContent      = total;
+  document.getElementById("barFill").style.width     = pct.toFixed(1) + "%";
+  document.getElementById("barPct").textContent      = pct.toFixed(1) + "% COMPLETE";
+  document.getElementById("cardRemaining").textContent = remaining;
+  document.getElementById("cardAvail").textContent   = AVAIL_DAYS;
+  document.getElementById("cardTravelNote").textContent = "✈ " + TRAVEL_DAYS_AHEAD + " travel days blocked";
+  document.getElementById("cardNeeded").textContent  = neededPW.toFixed(1);
+  document.getElementById("paceBadge").textContent   = paceLabel;
+  document.getElementById("paceBadge").className     = "badge " + paceClass;
+
+  document.getElementById("cardWeek").innerHTML =
+    thisWkCount + '<span> / ' + thisWkTgt + '</span>';
+  document.getElementById("cardWeekNote").textContent =
+    thisWkTrav > 0 ? "✈ " + thisWkTrav + " day" + (thisWkTrav!==1?"s":"") + " away" : "";
+  const wkBadge = document.getElementById("weekBadge");
+  if (thisWkCount >= thisWkTgt) {
+    wkBadge.textContent = "Week complete"; wkBadge.className = "badge good";
+  } else if (thisWkCount >= Math.ceil(thisWkTgt/2)) {
+    wkBadge.textContent = (thisWkTgt-thisWkCount) + " more to go"; wkBadge.className = "badge warn";
+  } else {
+    wkBadge.textContent = (thisWkTgt-thisWkCount) + " more to go"; wkBadge.className = "badge behind";
+  }
+
+  document.getElementById("mStreak").textContent = streak;
+  document.getElementById("mLogged").textContent = logged;
+  document.getElementById("mBest").textContent   = bestWk;
+  document.getElementById("mTravel").textContent = TRAVEL_DAYS_AHEAD;
+
+  renderCalendar();
+  renderTravelList();
+}
+
+function renderCalendar() {
+  document.getElementById("calTitle").textContent = MONTH_NAMES[viewMonth] + " " + viewYear;
+
+  const grid    = document.getElementById("calGrid");
+  const firstDow = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const todayKey = toKey(TODAY);
+
+  let html = "";
+  for (let i=0; i<firstDow; i++) html += '<div class="cell empty"></div>';
+
+  for (let day=1; day<=daysInMonth; day++) {
+    const date = new Date(viewYear, viewMonth, day);
+    const k    = toKey(date);
+    const isToday  = k === todayKey;
+    const isFuture = date > TODAY;
+    const worked   = workouts[k];
+    const travel   = TRAVEL_SET.has(k);
+
+    let cls = "cell";
+    if (travel)       cls += " travel";
+    else if (worked)  cls += " worked";
+    if (isToday)      cls += " today";
+    if (isFuture && !travel) cls += " future";
+
+    const onclick = (!travel && !isFuture) ? ` onclick="toggleDay('${k}')"` : "";
+    const title   = travel   ? "Travel — blocked"
+                  : isFuture ? ""
+                  : worked   ? "Tap to unlog"
+                             : "Tap to log workout";
+
+    html += `<div class="${cls}"${onclick} title="${title}">${day}${travel?'<span class="tick">✈</span>':""}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderTravelList() {
+  const compact = compactTravel();
+  document.getElementById("travelList").innerHTML = compact.map(g => {
+    const days = Math.round((ymd(g.end) - ymd(g.start)) / 86400000) + 1;
+    const dateStr = g.start === g.end ? g.start : g.start + " → " + g.end;
+    return `<div class="titem">
+      <div>
+        <div class="titem-label">✈ ${g.label} &mdash; ${dateStr}</div>
+        <div class="titem-dates">${days} day${days!==1?"s":""} blocked</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleDay(k) {
+  workouts[k] = !workouts[k];
+  render();
+}
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0;  viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  renderCalendar();
+}
+
+render();
+</script>
+</body>
+</html>
